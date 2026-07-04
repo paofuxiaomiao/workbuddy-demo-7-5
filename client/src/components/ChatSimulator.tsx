@@ -2,7 +2,26 @@
 // 高保真还原真实对话界面：流式输出、Markdown渲染、预设问题、多Agent标签
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Mic, Plus, Sparkles, ChevronDown, RotateCcw, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { X, Send, Mic, Plus, Sparkles, ChevronDown, RotateCcw, Copy, ThumbsUp, ThumbsDown, BookOpen } from 'lucide-react';
+
+// 名词词典（对话中使用）
+const CHAT_GLOSSARY: Record<string, string> = {
+  'Craft': 'Craft 模式：直接执行模式，AI 发送消息后立即开始干活，适合日常使用。',
+  'Plan': 'Plan 模式：先列计划再执行，新手推荐。AI 会先展示步骤，你确认后才开始。',
+  'Ask': 'Ask 模式：纯对话模式，AI 只回答问题不执行操作，积分消耗最少。',
+  'Agent': 'Agent：能理解目标、自动拆步骤、调用工具执行的 AI 工作流角色。',
+  'Markdown': 'Markdown：轻量文本格式，WorkBuddy 生成的报告通常是 .md 格式。',
+  '工作空间': '工作空间：WorkBuddy 读写文件的专用文件夹，相当于 AI 的"办公桌"。',
+  '提示词': '提示词：你发给 AI 的指令文本。六要素：文件路径+任务目标+步骤要求+输出格式+保存位置+执行边界。',
+  '技能': '技能（Skills）：WorkBuddy 可安装的功能扩展包，市场上有 3200+ 技能可选。',
+  '专家': '专家：已封装好的垂直领域 AI Agent，内置该领域的专业知识和工具。',
+  '积分': '积分：WorkBuddy 的使用货币，每日可在"Buddy 加油站"领取免费积分。',
+};
+
+function detectTerms(text: string): string[] {
+  return Object.keys(CHAT_GLOSSARY).filter(term => text.includes(term));
+}
+
 
 interface Message {
   id: string;
@@ -13,6 +32,7 @@ interface Message {
   agentColor?: string;
   status?: 'streaming' | 'done';
   subAgent?: string;
+  terms?: string[];
 }
 
 const PRESET_QA: Array<{ q: string; a: string; agentName?: string; agentColor?: string; agentAvatar?: string; subAgent?: string }> = [
@@ -112,6 +132,7 @@ export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
   const [currentStreamText, setCurrentStreamText] = useState('');
   const [currentQA, setCurrentQA] = useState<typeof PRESET_QA[0] | null>(null);
   const [streamDone, setStreamDone] = useState(false);
+  const [activeTerm, setActiveTerm] = useState<{ term: string; rect: DOMRect } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamIdx = useRef(0);
@@ -148,6 +169,7 @@ export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
           agentAvatar: qa.agentAvatar,
           subAgent: qa.subAgent,
           status: 'done',
+          terms: detectTerms(text),
         }]);
         setCurrentStreamText('');
         setCurrentQA(null);
@@ -265,6 +287,23 @@ export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
                     <button className="text-gray-400 hover:text-gray-600 transition-colors"><ThumbsUp size={13} /></button>
                     <button className="text-gray-400 hover:text-gray-600 transition-colors"><ThumbsDown size={13} /></button>
                     <button className="text-gray-400 hover:text-gray-600 transition-colors"><RotateCcw size={13} /></button>
+                    {/* 名词解释按钮 */}
+                    {msg.terms && msg.terms.length > 0 && (
+                      <div className="flex items-center gap-1 ml-1 flex-wrap">
+                        <BookOpen size={12} className="text-[#00C48C]" />
+                        <span className="text-xs text-[#00C48C] font-medium">名词：</span>
+                        {msg.terms.slice(0, 4).map(term => (
+                          <button
+                            key={term}
+                            onMouseEnter={(e) => setActiveTerm({ term, rect: (e.target as HTMLElement).getBoundingClientRect() })}
+                            onMouseLeave={() => setActiveTerm(null)}
+                            className="text-xs px-2 py-0.5 bg-[#00C48C]/10 text-[#00C48C] rounded-full hover:bg-[#00C48C]/20 transition-colors border border-[#00C48C]/20"
+                          >
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* 多Agent标签 */}
                   {msg.subAgent && (
@@ -373,6 +412,20 @@ export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
           </div>
         </div>
       </div>
+
+      {/* 名词解释悬浮卡片 */}
+      {activeTerm && (
+        <div
+          className="fixed z-[200] bg-gray-900 text-white rounded-xl shadow-2xl p-4 w-64 pointer-events-none"
+          style={{ top: activeTerm.rect.bottom + 8, left: Math.min(activeTerm.rect.left, window.innerWidth - 270), animation: 'modalIn 0.15s ease forwards' }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-1.5 h-4 rounded-full bg-[#00C48C]" />
+            <span className="text-sm font-bold">{activeTerm.term}</span>
+          </div>
+          <p className="text-xs text-gray-300 leading-relaxed">{CHAT_GLOSSARY[activeTerm.term]}</p>
+        </div>
+      )}
       <style>{`
         @keyframes modalIn {
           from { opacity: 0; transform: scale(0.96) translateY(8px); }

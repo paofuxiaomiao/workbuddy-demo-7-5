@@ -8,9 +8,9 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Plus, Search, Filter, Bell, Settings, ChevronDown, ChevronRight,
   Mic, Send, Paperclip, Sparkles, Zap, Github, Shield, Folder,
-  Users, Bot, Layers, MoreHorizontal, MessageSquare, MonitorPlay,
-  HelpCircle
+  Users, Bot, Layers, MoreHorizontal, MessageSquare, MonitorPlay, BookOpen
 } from 'lucide-react';
+import GuidePage from '@/components/GuidePage';
 import FeatureDrawer from '@/components/FeatureDrawer';
 import SettingsModal from '@/components/SettingsModal';
 import ExpertPanel from '@/components/ExpertPanel';
@@ -37,6 +37,7 @@ export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [showDesktopTask, setShowDesktopTask] = useState(false);
   const [showWorkspace, setShowWorkspace] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mainView, setMainView] = useState<MainView>('home');
   const [activeNav, setActiveNav] = useState('newTask');
@@ -412,6 +413,22 @@ export default function Home() {
 
               {/* ===== 三个模拟体验入口 ===== */}
               <div className="w-full max-w-2xl mt-5 grid grid-cols-3 gap-3">
+                {/* 功能指南入口 */}
+                <div className="col-span-3 mb-1">
+                  <button
+                    onClick={() => setShowGuide(true)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-950 text-white rounded-xl hover:bg-gray-800 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <BookOpen size={16} className="text-[#00C48C]" />
+                      <div className="text-left">
+                        <p className="text-sm font-semibold">WorkBuddy 功能指南</p>
+                        <p className="text-xs text-gray-400">8章节 · 20+名词解释 · 提示词模板 · 操作检查清单</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-400 group-hover:text-white transition-colors" />
+                  </button>
+                </div>
                 <button
                   onClick={() => setShowChat(true)}
                   className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-xl hover:border-[#00C48C]/50 hover:bg-[#00C48C]/5 transition-all group"
@@ -474,6 +491,7 @@ export default function Home() {
           onSelect={(name) => setSelectedWorkspace(name)}
         />
       )}
+      {showGuide && <GuidePage onClose={() => setShowGuide(false)} />}
 
       <style>{`
         @keyframes popIn {
