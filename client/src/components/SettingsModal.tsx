@@ -2,7 +2,7 @@
 // 包含系统设置、记忆、个性化、安全中心等子页面
 
 import { useState } from 'react';
-import { X, User, Settings, Brain, Cpu, Sliders, Palette, Database, Shield, HelpCircle } from 'lucide-react';
+import { X, User, Settings, Brain, Cpu, Sliders, Palette, Database, Shield, HelpCircle, Info, BookOpen, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { FeatureInfo } from '@/data/features';
 
 interface SettingsModalProps {
@@ -115,6 +115,18 @@ function SystemSettings({ onFeatureClick }: { onFeatureClick: (f: FeatureInfo) =
 
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<Settings size={14} />}
+        color="#6B7280"
+        title="系统设置 — 新手必改的 3 项"
+        desc="系统设置控制 WorkBuddy 的基础行为。新手建议第一次打开后立即完成以下配置，否则后续使用可能遇到文件找不到、技能过期、电脑休眠等问题。"
+        tips={[
+          '「默认工作空间路径」：强烈建议改为 D:/WorkBuddy/，避免文件散落在系统盘',
+          '「技能自动更新」：建议开启，已安装的技能会自动升级到最新版本',
+          '「锁屏远程」：如果你需要远程下任务或设置自动化，必须开启，否则电脑休眠后任务会中断',
+          '「发送消息」快捷键：默认 Enter 直接发送，如果你习惯换行，可以改为 Ctrl+Enter',
+        ]}
+      />
       <SettingRow label="显示语言" desc="设置应用程序界面的显示语言。">
         <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700">
           <option>中文(简体)</option>
@@ -169,6 +181,19 @@ function MemorySettings() {
   const [memOn, setMemOn] = useState(true);
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<Brain size={14} />}
+        color="#8B5CF6"
+        title="记忆 — 让 AI 越用越懂你"
+        desc="记忆功能让 WorkBuddy 从你们的对话中提取并记住你的偏好、工作背景和习惯规则。对话越多，AI 就越了解你，回答也越个性化。记忆内容仅本人可见。"
+        tips={[
+          '建议开启「生成对话记忆」，AI 会自动从对话中提取关键信息',
+          '记忆不是越多越好——长期稳定的工作习惯放进记忆，短期任务要求直接写在当前任务里',
+          '新手可以先写 5 条基础记忆：先列计划再执行、不编造数据、不覆盖原文件、总结先给结论、标清保存路径',
+          '如果之前用过 ChatGPT 等工具，可以点「导入」把那边的记忆迁移过来',
+        ]}
+      />
+
       <div>
         <h3 className="text-base font-semibold text-gray-900 mb-1">记忆</h3>
         <p className="text-sm text-gray-500 leading-relaxed">
@@ -202,6 +227,18 @@ function PersonalSettings() {
   const [text, setText] = useState('');
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<Palette size={14} />}
+        color="#EC4899"
+        title="个性化 — 定制你的专属 AI 助理"
+        desc="个性化设置让你可以设置 AI 的回复风格和自定义指令。自定义指令是最高优先级的行为规则，AI 在所有对话中都会遵循。"
+        tips={[
+          '「基本风格和语调」：选择正式/默认/轻松，影响 AI 的回复措辞风格',
+          '「自定义指令」：这是最重要的设置！把你的工作背景、偏好规则写在这里，AI 每次都会参考',
+          '自定义指令示例：「我是小学教师，处理文件时先列计划再执行，不要编造数据，总结时先给结论」',
+          '指令不要超过 500 字，太长会让 AI 分散注意力，只写最重要的规则',
+        ]}
+      />
       <h3 className="text-base font-semibold text-gray-900">个性化</h3>
       <SettingRow label="基本风格和语调" desc="设置 AI 助手回复你的风格和语调。这不会影响 AI 助手的功能。">
         <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700">
@@ -238,6 +275,19 @@ function PersonalSettings() {
 function SecuritySettings() {
   return (
     <div className="space-y-4">
+      <TeachingBanner
+        icon={<Shield size={14} />}
+        color="#EF4444"
+        title="安全中心 — 控制 AI 的操作边界"
+        desc="安全中心统一管理 AI 的操作权限范围。新手建议保持默认配置，等熟悉 WorkBuddy 后再根据需要调整。"
+        tips={[
+          '「沙箱安全」：AI 在隔离的安全工作区内操作，即使出错也不会影响整台电脑',
+          '「文件安全」：可以设置哪些文件夹 AI 可以访问，哪些不能碰——保护重要文件的关键',
+          '「命令安全」：控制 AI 能执行哪些系统命令，新手保持默认即可',
+          '「数据安全」：本地与云端通信使用端到端加密，数据传输有安全保障',
+          '「内置运行时」：允许使用 Node.js、Python 等工具，开发类任务需要开启',
+        ]}
+      />
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-base font-semibold text-gray-900">安全中心</h3>
@@ -278,6 +328,18 @@ function SecuritySettings() {
 function AccountSettings() {
   return (
     <div className="space-y-4">
+      <TeachingBanner
+        icon={<User size={14} />}
+        color="#00C48C"
+        title="账户管理 — 积分与版本说明"
+        desc="账户管理页面显示你的账户信息、版本类型和积分余额。积分是 WorkBuddy 的使用货币，不同模型消耗不同数量的积分。"
+        tips={[
+          '体验版：免费使用，有每日积分限额，适合入门体验',
+          '个人专业版（约 58元/月）：积分更多，适合日常重度使用',
+          '每天在「Buddy 加油站」领取免费积分（100通用积分/天），坚持打卡积分更多',
+          '积分不够用时，可以在账户页面充值或升级版本',
+        ]}
+      />
       <h3 className="text-base font-semibold text-gray-900">账户管理</h3>
       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
         <div className="w-12 h-12 rounded-full bg-[#00C48C] flex items-center justify-center text-white font-bold text-lg">A</div>
@@ -298,6 +360,18 @@ function AISettings() {
   const [contextLen, setContextLen] = useState(true);
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<Brain size={14} />}
+        color="#6366F1"
+        title="智能体设置 — AI 行为方式配置"
+        desc="智能体设置控制 AI 在执行任务时的行为模式，影响输出质量和执行效率。新手保持默认即可，熟悉后可根据需要调整。"
+        tips={[
+          '「自动思考模式」：开启后 AI 在执行复杂任务前会先进行内部推理，输出质量更高，但速度稍慢',
+          '「流式输出」：开启后 AI 回复逐字显示，关闭则等待完整回复后一次性展示',
+          '「长上下文优化」：对话很长时自动压缩历史记录，保持 AI 理解准确性——建议开启',
+          '「最大执行步数」：单次任务 AI 最多执行的操作步数，超出后会暂停询问是否继续',
+        ]}
+      />
       <p className="text-xs text-gray-500 leading-relaxed">配置 AI 智能体的行为方式，影响任务执行的效率与质量。</p>
       <SettingRow label="自动思考模式" desc="开启后 AI 在执行复杂任务前会先进行内部推理，提升输出质量。">
         <WbToggle checked={autoThink} onChange={setAutoThink} />
@@ -330,6 +404,19 @@ function ModelSettings() {
   ];
   return (
     <div className="space-y-4">
+      <TeachingBanner
+        icon={<Sliders size={14} />}
+        color="#F59E0B"
+        title="模型 — 选择 AI 的大脑"
+        desc="模型是 WorkBuddy 背后的「大脑」，不同模型在写作、表格、代码等任务上表现不同，积分消耗也不同。新手不要纠结，先用推荐模型跑通任务再说。"
+        tips={[
+          '新手无脑选 DeepSeek V4 Pro：综合能力强、积分消耗低，适合绝大多数场景',
+          '长文档处理（PDF/Word 超过 50 页）：推荐 Kimi k2，长文本理解更好',
+          '代码开发任务：推荐 GLM-4 Plus 或 DeepSeek V4 Pro',
+          '如果你有自己的 API Key，可以点「添加自定义模型」接入任何兼容 OpenAI 协议的模型',
+          '不同模型积分消耗不同，任务复杂时选高能力模型，简单任务用低消耗模型节省积分',
+        ]}
+      />
       <p className="text-xs text-gray-500 leading-relaxed">选择 AI 对话使用的默认大模型。不同模型能力各有侧重，积分消耗也不同。</p>
       <div className="space-y-2">
         {models.map((m, i) => (
@@ -362,6 +449,17 @@ function BuddySettings() {
   const [proactiveOn, setProactiveOn] = useState(true);
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<User size={14} />}
+        color="#14B8A6"
+        title="小扶设置 — 配置你的 AI 助理助手"
+        desc="小扶是 WorkBuddy 的内置助理角色，可以通过语音、主动建议等方式辅助你使用 WorkBuddy。"
+        tips={[
+          '「主动建议」：建议开启，AI 完成任务后会主动提供下一步操作建议',
+          '「语音回复」：适合免手操作场景，如开车时用语音控制 WorkBuddy',
+          '「唤醒词」：设置后可以直接说出唤醒词开始语音对话，默认为"小扶小扶"',
+        ]}
+      />
       <p className="text-xs text-gray-500 leading-relaxed">配置 WorkBuddy 小扶助理的行为与交互方式。</p>
       <SettingRow label="语音回复" desc="开启后 AI 回复内容将同时以语音播报，适合免手操作场景。">
         <WbToggle checked={voiceOn} onChange={setVoiceOn} />
@@ -379,6 +477,18 @@ function BuddySettings() {
 function DataSettings() {
   return (
     <div className="space-y-5">
+      <TeachingBanner
+        icon={<Database size={14} />}
+        color="#6366F1"
+        title="数据管理 — 缓存清理与云端同步"
+        desc="数据管理页面帮助你管理 WorkBuddy 占用的本地存储空间，以及配置云端同步功能。"
+        tips={[
+          '如果 C 盘空间不足，可以在这里清理「任务文件」缓存（AI 生成的中间文件）',
+          '「对话记录」缓存清除后，历史对话内容将无法恢复，谨慎操作',
+          '「云端同步」建议开启，换电脑后可以恢复对话记录和设置',
+          '定期清理「技能缓存」可以解决部分技能运行异常的问题',
+        ]}
+      />
       <p className="text-xs text-gray-500 leading-relaxed">管理本地数据、缓存和同步设置。</p>
       <div className="space-y-3">
         {[
@@ -408,6 +518,18 @@ function DataSettings() {
 function HelpSettings() {
   return (
     <div className="space-y-4">
+      <TeachingBanner
+        icon={<HelpCircle size={14} />}
+        color="#00C48C"
+        title="帮助与反馈 — 遇到问题先看这里"
+        desc="遇到问题不要慌，90% 的新手问题都有现成答案。建议按以下顺序查找解决方案。"
+        tips={[
+          '第一步：查看「新手入门指南」，大多数常见问题都有详细说明',
+          '第二步：看「视频教程」，手把手演示比文字更直观',
+          '第三步：去「用户社区」搜索，很可能已经有人遇到并解决了同样的问题',
+          '常见问题：文件找不到（检查路径是否用绝对路径）、任务中断（检查锁屏远程是否开启）',
+        ]}
+      />
       <p className="text-xs text-gray-500 leading-relaxed">遇到问题？查看文档或联系我们。</p>
       <div className="grid grid-cols-2 gap-3">
         {[
@@ -489,5 +611,38 @@ function WbToggle({ checked, onChange }: { checked: boolean; onChange: (v: boole
     >
       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${checked ? 'right-0.5' : 'left-0.5'}`} />
     </button>
+  );
+}
+// 教学说明横幅组件
+function TeachingBanner({
+  icon, color, title, desc, tips
+}: {
+  icon: React.ReactNode;
+  color: string;
+  title: string;
+  desc: string;
+  tips: string[];
+}) {
+  return (
+    <div className="mb-5 rounded-xl overflow-hidden border" style={{ borderColor: color + '30' }}>
+      {/* 顶部标题栏 */}
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: color + '12' }}>
+        <span style={{ color }}>{icon}</span>
+        <span className="text-sm font-semibold" style={{ color }}>{title}</span>
+        <span className="ml-auto text-xs px-2 py-0.5 rounded-full text-white" style={{ background: color }}>新手必读</span>
+      </div>
+      {/* 描述 */}
+      <div className="px-4 py-3 bg-white border-t" style={{ borderColor: color + '20' }}>
+        <p className="text-sm text-gray-700 leading-relaxed mb-2">{desc}</p>
+        <div className="space-y-1.5">
+          {tips.map((tip, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <CheckCircle2 size={13} className="mt-0.5 flex-shrink-0" style={{ color }} />
+              <span className="text-xs text-gray-600 leading-relaxed">{tip}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
