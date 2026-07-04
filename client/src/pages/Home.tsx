@@ -10,7 +10,6 @@ import {
   Mic, Send, Paperclip, Sparkles, Zap, Github, Shield, Folder,
   Users, Bot, Layers, MoreHorizontal, MessageSquare, MonitorPlay, BookOpen
 } from 'lucide-react';
-import GuidePage from '@/components/GuidePage';
 import FeatureDrawer from '@/components/FeatureDrawer';
 import SettingsModal from '@/components/SettingsModal';
 import ExpertPanel from '@/components/ExpertPanel';
@@ -19,7 +18,11 @@ import AutomationPanel from '@/components/AutomationPanel';
 import ChatSimulator from '@/components/ChatSimulator';
 import DesktopTaskSimulator from '@/components/DesktopTaskSimulator';
 import WorkspaceModal from '@/components/WorkspaceModal';
+import GuidePage from '@/components/GuidePage';
 import { features, type FeatureInfo } from '@/data/features';
+import EasterEgg from '@/components/EasterEgg';
+import ProgressBar from '@/components/ProgressBar';
+import { useProgress } from '@/hooks/useProgress';
 
 type MainView = 'home' | 'expert' | 'project' | 'automation';
 
@@ -38,6 +41,7 @@ export default function Home() {
   const [showDesktopTask, setShowDesktopTask] = useState(false);
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const { completedCategories, isAllComplete, eggTriggered, track, dismissEgg, progress } = useProgress();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mainView, setMainView] = useState<MainView>('home');
   const [activeNav, setActiveNav] = useState('newTask');
@@ -54,7 +58,10 @@ export default function Home() {
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const openFeature = (id: string) => {
-    if (features[id]) setActiveFeature(features[id]);
+    if (features[id]) {
+      setActiveFeature(features[id]);
+      track('feature_click');
+    }
   };
 
   useEffect(() => {
@@ -81,6 +88,7 @@ export default function Home() {
   const handleSend = () => {
     if (inputText.trim()) {
       setShowChat(true);
+      track('chat_complete');
     }
   };
 
@@ -155,6 +163,7 @@ export default function Home() {
             <div className="mt-0.5 space-y-0.5">
               {taskList.map((task, i) => (
                 <button key={i} onClick={() => { setShowChat(true); }}
+                  onClickCapture={() => track('chat_complete')}
                   className="wb-interactive flex items-center justify-between w-full px-2 py-1.5 rounded-lg hover:bg-gray-200/60">
                   <span className="text-xs text-gray-700 truncate flex-1 text-left">{task.name}</span>
                   <span className="text-xs text-gray-400 ml-2 flex-shrink-0">{task.time}</span>
@@ -199,7 +208,7 @@ export default function Home() {
               <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-[#00C48C] flex items-center justify-center text-white text-xs font-bold">A</div>
               <span className="text-sm font-medium text-gray-700 flex-1 text-left">Avec moi</span>
               <Bell size={13} className="text-gray-400" />
-              <Settings size={13} className="text-gray-400" onClick={(e) => { e.stopPropagation(); setShowUserMenu(false); setShowSettings(true); }} />
+              <Settings size={13} className="text-gray-400" onClick={(e) => { e.stopPropagation(); setShowUserMenu(false); setShowSettings(true); track('settings_tab'); }} />
             </button>
 
             {showUserMenu && (
@@ -258,11 +267,11 @@ export default function Home() {
 
         {/* 视图切换 */}
         {mainView === 'expert' ? (
-          <ExpertPanel onFeatureClick={setActiveFeature} />
+          <ExpertPanel onFeatureClick={(f) => { setActiveFeature(f); track('expert_click'); }} />
         ) : mainView === 'project' ? (
           <ProjectPanel onFeatureClick={setActiveFeature} />
         ) : mainView === 'automation' ? (
-          <AutomationPanel onFeatureClick={setActiveFeature} />
+          <AutomationPanel onFeatureClick={(f) => { setActiveFeature(f); track('automation_click'); }} />
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* 欢迎横幅 */}
@@ -402,7 +411,7 @@ export default function Home() {
 
               {/* 工作空间选择 */}
               <div className="w-full max-w-2xl mt-2">
-                <button
+              <button
                   onClick={() => setShowWorkspace(true)}
                   className="wb-interactive flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors">
                   <Folder size={13} />
@@ -416,9 +425,10 @@ export default function Home() {
                 {/* 功能指南入口 */}
                 <div className="col-span-3 mb-1">
                   <button
-                    onClick={() => setShowGuide(true)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-950 text-white rounded-xl hover:bg-gray-800 transition-colors group"
-                  >
+                  onClick={() => setShowGuide(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-950 text-white rounded-xl hover:bg-gray-800 transition-colors group"
+                >
+
                     <div className="flex items-center gap-3">
                       <BookOpen size={16} className="text-[#00C48C]" />
                       <div className="text-left">
@@ -483,15 +493,35 @@ export default function Home() {
           onFeatureClick={(f) => { setShowSettings(false); setActiveFeature(f); }}
         />
       )}
-      {showChat && <ChatSimulator onClose={() => setShowChat(false)} />}
-      {showDesktopTask && <DesktopTaskSimulator onClose={() => setShowDesktopTask(false)} />}
+      {showChat && <ChatSimulator onClose={() => setShowChat(false)} onPresetUsed={() => track('preset_chat')} />}
+      {showDesktopTask && <DesktopTaskSimulator onClose={() => { setShowDesktopTask(false); track('task_complete'); }} />}
       {showWorkspace && (
         <WorkspaceModal
           onClose={() => setShowWorkspace(false)}
-          onSelect={(name) => setSelectedWorkspace(name)}
+          onSelect={(name) => { setSelectedWorkspace(name); track('workspace_select'); }}
         />
       )}
-      {showGuide && <GuidePage onClose={() => setShowGuide(false)} />}
+      {showGuide && <GuidePage onClose={() => { setShowGuide(false); track('guide_chapter'); }} />}
+
+      {/* 进度条 */}
+      <ProgressBar
+        completedCategories={completedCategories}
+        isAllComplete={isAllComplete}
+        progress={progress}
+        onEggClick={() => {
+          if (isAllComplete) {
+            import('@/components/EasterEgg').then(() => {});
+            dismissEgg();
+            setTimeout(() => {
+              localStorage.removeItem('wb_egg_seen');
+              window.dispatchEvent(new CustomEvent('show_egg'));
+            }, 10);
+          }
+        }}
+      />
+
+      {/* 彩蛋弹窗 */}
+      {eggTriggered && <EasterEgg onClose={dismissEgg} />}
 
       <style>{`
         @keyframes popIn {

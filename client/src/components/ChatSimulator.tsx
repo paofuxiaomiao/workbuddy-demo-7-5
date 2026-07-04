@@ -123,9 +123,10 @@ function renderMarkdown(text: string): string {
 
 interface ChatSimulatorProps {
   onClose: () => void;
+  onPresetUsed?: () => void;
 }
 
-export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
+export default function ChatSimulator({ onClose, onPresetUsed }: ChatSimulatorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -184,6 +185,7 @@ export default function ChatSimulator({ onClose }: ChatSimulatorProps) {
   const sendMessage = (text: string) => {
     if (!text.trim() || streaming) return;
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
+    onPresetUsed?.();
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
     scrollToBottom();

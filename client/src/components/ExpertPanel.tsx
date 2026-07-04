@@ -8,6 +8,11 @@ interface ExpertPanelProps {
   onFeatureClick: (feature: FeatureInfo) => void;
 }
 
+// 进度追踪回调（从外部传入）
+interface ExpertPanelPropsExt extends ExpertPanelProps {
+  onExpertClick?: () => void;
+}
+
 const expertCategories = [
   { name: '内容创作', experts: ['内容创作专家团', '内容创作专家', '小红书运营专家'], img: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=300&h=120&fit=crop' },
   { name: '投资分析', experts: ['交易分析团队', '股票研究专家', '腾讯自选股票投研专家团'], img: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=300&h=120&fit=crop' },
