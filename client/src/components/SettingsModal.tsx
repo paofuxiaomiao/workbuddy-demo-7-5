@@ -373,38 +373,272 @@ function AISettings() {
 }
 
 function ModelSettings() {
-  const models = [
-    { name: 'DeepSeek V4 Pro', provider: 'DeepSeek', tag: '推荐', desc: '综合能力强，适合大多数场景', cost: '低' },
-    { name: '腾讯混元 Turbo', provider: '腾讯', tag: '', desc: '腾讯自研，中文理解出色', cost: '低' },
-    { name: 'Kimi k2', provider: 'Moonshot', tag: '', desc: '长文本处理能力强', cost: '中' },
-    { name: 'GLM-4 Plus', provider: '智谱AI', tag: '', desc: '代码与推理能力均衡', cost: '中' },
-    { name: 'MiniMax Text-01', provider: 'MiniMax', tag: '', desc: '多模态能力，支持图像理解', cost: '中' },
-  ];
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState('腾讯云 Token Plan / 通用 Token Plan（个人版）');
+  const [showProviderDropdown, setShowProviderDropdown] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [modelName, setModelName] = useState('Auto');
+  const [isCustom, setIsCustom] = useState(false);
+  const [toolCall, setToolCall] = useState(true);
+  const [imgInput, setImgInput] = useState(false);
+  const [thinkMode, setThinkMode] = useState(false);
+  const [customProto, setCustomProto] = useState(false);
+  const [inputTokens, setInputTokens] = useState('');
+  const [outputTokens, setOutputTokens] = useState('');
+  const [providerSearch, setProviderSearch] = useState('');
+
+  const PROVIDERS = {
+    'Token Plan': [
+      '腾讯云 Token Plan / Token Plan 企业版专业...',
+      '腾讯云 Token Plan / Token Plan 企业版轻享...',
+      '腾讯云 Token Plan / 通用 Token Plan（个人版）',
+      '腾讯云 Token Plan / Hy Token Plan（个人版）',
+    ],
+    'Coding Plan': [
+      '腾讯云 Coding Plan / Tencent Cloud Coding...',
+      '智谱 Coding Plan / GLM Coding Plan',
+      'Kimi Coding Plan',
+    ],
+    '自定义 API': ['自定义 / Custom'],
+  };
+
+  const endpointMap: Record<string, string> = {
+    '腾讯云 Token Plan / 通用 Token Plan（个人版）': 'https://api.lkeap.cloud.tencent.com/plan/v3/chat/completions',
+    '腾讯云 Token Plan / Hy Token Plan（个人版）': 'https://api.lkeap.cloud.tencent.com/plan/v3/chat/completions',
+    '腾讯云 Token Plan / Token Plan 企业版专业...': 'https://api.lkeap.cloud.tencent.com/v1/chat/completions',
+    '腾讯云 Token Plan / Token Plan 企业版轻享...': 'https://api.lkeap.cloud.tencent.com/v1/chat/completions',
+    '腾讯云 Coding Plan / Tencent Cloud Coding...': 'https://api.lkeap.cloud.tencent.com/v1/chat/completions',
+    '智谱 Coding Plan / GLM Coding Plan': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    'Kimi Coding Plan': 'https://api.moonshot.cn/v1/chat/completions',
+    '自定义 / Custom': '',
+  };
+
+  const currentEndpoint = endpointMap[selectedProvider] || '';
+  const filteredProviders = Object.entries(PROVIDERS).map(([group, items]) => ({
+    group,
+    items: items.filter(p => !providerSearch || p.toLowerCase().includes(providerSearch.toLowerCase())),
+  })).filter(g => g.items.length > 0);
+
   return (
     <div className="space-y-4">
-      <p className="text-xs text-gray-500 leading-relaxed">选择 AI 对话使用的默认大模型。不同模型能力各有侧重，积分消耗也不同。</p>
-      <div className="space-y-2">
-        {models.map((m, i) => (
-          <div key={m.name} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${i === 0 ? 'border-[#00C48C] bg-[#00C48C]/5' : 'border-gray-100 hover:border-gray-200'}`}>
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${i === 0 ? 'border-[#00C48C]' : 'border-gray-300'}`}>
-              {i === 0 && <div className="w-2 h-2 rounded-full bg-[#00C48C]" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-800">{m.name}</span>
-                {m.tag && <span className="text-xs bg-[#00C48C]/15 text-[#00C48C] px-1.5 rounded">{m.tag}</span>}
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">{m.provider} · {m.desc}</p>
-            </div>
-            <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${m.cost === '低' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>积分消耗{m.cost}</span>
+      <SettingRowTip label="模型" desc="选择 AI 对话使用的默认大模型。不同模型能力各有侧重，积分消耗也不同。"
+        tooltip="模型是 WorkBuddy 背后的大脑。新手先用内置推荐模型跑通任务，再考虑自定义模型。"
+        tips={['新手推荐：DeepSeek V4 Pro，综合能力强积分消耗低', '长文档处理推荐 Kimi k2', '代码任务推荐 GLM Coding Plan']}>
+        <span className="text-xs text-gray-400">当前：DeepSeek V4 Pro</span>
+      </SettingRowTip>
+
+      {/* 自定义模型区域 */}
+      <div className="border border-gray-100 rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+          <div>
+            <p className="text-sm font-medium text-gray-800">自定义模型</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              管理写入到 <span className="font-mono text-[#00C48C]">~/.workbuddy/models.json</span> 的本地自定义模型配置。
+            </p>
           </div>
-        ))}
+          <button
+            onClick={() => { setShowAddModal(true); setIsCustom(false); setSelectedProvider('腾讯云 Token Plan / 通用 Token Plan（个人版）'); setApiKey(''); setModelName('Auto'); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-all active:scale-95"
+            style={{ background: '#1a1a1a' }}
+          >
+            <span className="text-base leading-none">+</span> 添加模型
+          </button>
+        </div>
+        <div className="px-4 py-8 text-center text-xs text-gray-400">
+          暂无自定义模型，点击「添加模型」接入自己的 API Key
+        </div>
       </div>
-      <div className="pt-2 border-t border-gray-100">
-        <button className="flex items-center gap-2 text-sm text-[#00C48C] hover:underline">
-          <span>+</span> 添加自定义模型（接入自己的 API Key）
-        </button>
-      </div>
+
+      {/* 添加模型弹窗 */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+            {/* 弹窗标题 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <span className="text-base font-semibold text-gray-900">添加模型</span>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">仅支持 OpenAI 兼容协议 API</span>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100">
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* 提供商 */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">提供商</label>
+                <div className="relative">
+                  {/* 当前选择显示 */}
+                  <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 bg-white">
+                    {!isCustom && <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center" style={{ background: '#006EFF' }}>
+                      <span style={{ fontSize: 9, color: 'white', fontWeight: 'bold' }}>云</span>
+                    </div>}
+                    <input
+                      value={isCustom ? '' : currentEndpoint}
+                      readOnly={!isCustom}
+                      placeholder={isCustom ? 'https://api.example.com/v1/chat/completions' : ''}
+                      className="flex-1 text-xs text-gray-600 outline-none bg-transparent font-mono"
+                    />
+                    <a href="#" className="text-xs text-[#00C48C] flex-shrink-0 hover:underline" onClick={e => e.preventDefault()}>查看文档</a>
+                  </div>
+                  {/* 提供商选择器 */}
+                  <div className="mt-1.5 border border-gray-200 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+                      className="flex items-center justify-between w-full px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        {!isCustom && <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center" style={{ background: '#006EFF' }}>
+                          <span style={{ fontSize: 9, color: 'white', fontWeight: 'bold' }}>云</span>
+                        </div>}
+                        <span className="text-sm text-gray-700">{isCustom ? '自定义 / Custom' : selectedProvider}</span>
+                      </div>
+                      <span className="text-gray-400 text-xs">▼</span>
+                    </button>
+                    {showProviderDropdown && (
+                      <div className="border-t border-gray-100 bg-white max-h-52 overflow-y-auto">
+                        <div className="px-3 py-2 border-b border-gray-100">
+                          <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5">
+                            <span className="text-gray-400 text-xs">🔍</span>
+                            <input value={providerSearch} onChange={e => setProviderSearch(e.target.value)}
+                              placeholder="提供商" className="flex-1 text-xs outline-none bg-transparent text-gray-700" />
+                          </div>
+                        </div>
+                        {filteredProviders.map(({ group, items }) => (
+                          <div key={group}>
+                            <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50">{group}</div>
+                            {items.map(p => (
+                              <button key={p} onClick={() => { setSelectedProvider(p); setIsCustom(p.includes('Custom')); setShowProviderDropdown(false); }}
+                                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 transition-colors text-left">
+                                {p.includes('Custom') ? (
+                                  <span className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center text-gray-500 flex-shrink-0">+</span>
+                                ) : p.includes('智谱') ? (
+                                  <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center bg-purple-600"><span style={{ fontSize: 8, color: 'white', fontWeight: 'bold' }}>Z</span></div>
+                                ) : p.includes('Kimi') ? (
+                                  <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center bg-orange-500"><span style={{ fontSize: 8, color: 'white', fontWeight: 'bold' }}>K</span></div>
+                                ) : (
+                                  <div className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center" style={{ background: '#006EFF' }}><span style={{ fontSize: 8, color: 'white', fontWeight: 'bold' }}>云</span></div>
+                                )}
+                                <span className="text-sm text-gray-700 flex-1">{p}</span>
+                                {p === selectedProvider && <span className="text-[#00C48C] text-xs">✓</span>}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* API Key */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">API Key</label>
+                <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5">
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    placeholder="输入你的 API Key"
+                    className="flex-1 text-sm outline-none bg-transparent text-gray-700"
+                  />
+                  <button onClick={() => setShowApiKey(!showApiKey)} className="text-gray-400 hover:text-gray-600">
+                    <span className="text-xs">{showApiKey ? '👁' : '👁‍🗨'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 模型名称 */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">模型名称</label>
+                {isCustom ? (
+                  <input
+                    value={modelName === 'Auto' ? '' : modelName}
+                    onChange={e => setModelName(e.target.value)}
+                    placeholder="输入模型参数值，例如 gpt-4o 或 openai/gpt-4o"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00C48C] text-gray-700"
+                  />
+                ) : (
+                  <div className="border border-gray-200 rounded-xl px-3 py-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-50">
+                    <span className="text-sm text-gray-700">{modelName}</span>
+                    <span className="text-gray-400 text-xs">▼</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 高级配置（自定义时显示） */}
+              {isCustom && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">高级配置</label>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {[
+                      { label: '工具调用', val: toolCall, set: setToolCall },
+                      { label: '图片输入', val: imgInput, set: setImgInput },
+                      { label: '思考模式', val: thinkMode, set: setThinkMode },
+                    ].map(item => (
+                      <label key={item.label} className="flex items-center gap-2 cursor-pointer">
+                        <div onClick={() => item.set(!item.val)}
+                          className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all"
+                          style={{ borderColor: item.val ? '#00C48C' : '#d1d5db', background: item.val ? '#00C48C' : 'white' }}>
+                          {item.val && <span style={{ fontSize: 9, color: 'white' }}>✓</span>}
+                        </div>
+                        <span className="text-sm text-gray-700">{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mb-3">
+                    <div onClick={() => setCustomProto(!customProto)}
+                      className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all"
+                      style={{ borderColor: customProto ? '#00C48C' : '#d1d5db', background: customProto ? '#00C48C' : 'white' }}>
+                      {customProto && <span style={{ fontSize: 9, color: 'white' }}>✓</span>}
+                    </div>
+                    <span className="text-sm text-gray-700">自定义协议</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">输入</label>
+                      <input value={inputTokens} onChange={e => setInputTokens(e.target.value)}
+                        placeholder="使用提供商默认值"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00C48C]" />
+                      <div className="flex gap-1 mt-1">
+                        {['32K','64K','128K','256K'].map(t => (
+                          <button key={t} onClick={() => setInputTokens(t)}
+                            className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200">{t}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">输出</label>
+                      <input value={outputTokens} onChange={e => setOutputTokens(e.target.value)}
+                        placeholder="使用提供商默认值"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00C48C]" />
+                      <div className="flex gap-1 mt-1">
+                        {['8K','16K','32K','64K'].map(t => (
+                          <button key={t} onClick={() => setOutputTokens(t)}
+                            className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200">{t}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 底部按钮 */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <button onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-200 transition-colors">取消</button>
+              <button onClick={() => setShowAddModal(false)}
+                className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all active:scale-95"
+                style={{ background: '#1a1a1a' }}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
