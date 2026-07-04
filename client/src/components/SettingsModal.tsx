@@ -420,11 +420,11 @@ function BuddySettings() {
         <WbToggle checked={voiceOn} onChange={setVoiceOn} />
       </SettingRowTip>
       <SettingRowTip label="主动建议" desc="AI 在完成任务后会主动提供下一步操作建议，帮助你更高效地推进工作。"
-      tooltip="建议开启。任务完成后 AI 会主动说"你还可以做..."，帮助你发现下一步操作，特别适合新手。">
+      tooltip={'建议开启。任务完成后 AI 会主动说「你还可以做...」，帮助你发现下一步操作，特别适合新手。'}>
         <WbToggle checked={proactiveOn} onChange={setProactiveOn} />
       </SettingRowTip>
       <SettingRowTip label="小扶唤醒词" desc="设置语音唤醒词，说出唤醒词后可直接开始语音对话。"
-      tooltip="设置后可以直接说唤醒词开始语音对话，不用手动点击。默认唤醒词是"小扶小扶"。">
+      tooltip={'设置后可以直接说唤醒词开始语音对话，不用手动点击。默认唤醒词是「小扶小扶」。'}>
         <input className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-32 outline-none focus:border-[#00C48C]" defaultValue="小扶小扶" />
       </SettingRowTip>
     </div>
