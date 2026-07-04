@@ -28,15 +28,6 @@ export default function SettingsModal({ onClose, onFeatureClick }: SettingsModal
 
   const handleNavClick = (id: string) => {
     setActiveTab(id);
-    if (id === 'memory') {
-      import('@/data/features').then(m => onFeatureClick(m.features.memory));
-    } else if (id === 'personal') {
-      import('@/data/features').then(m => onFeatureClick(m.features.personalization));
-    } else if (id === 'security') {
-      import('@/data/features').then(m => onFeatureClick(m.features.security));
-    } else if (id === 'model') {
-      import('@/data/features').then(m => onFeatureClick(m.features.modelSelect));
-    }
   };
 
   return (
@@ -76,7 +67,9 @@ export default function SettingsModal({ onClose, onFeatureClick }: SettingsModal
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">设置</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {settingsNav.find(n => n.id === activeTab)?.label ?? '设置'}
+            </h2>
             <button
               onClick={onClose}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
@@ -92,12 +85,11 @@ export default function SettingsModal({ onClose, onFeatureClick }: SettingsModal
             {activeTab === 'personal' && <PersonalSettings />}
             {activeTab === 'security' && <SecuritySettings />}
             {activeTab === 'account' && <AccountSettings />}
-            {(activeTab === 'ai' || activeTab === 'model' || activeTab === 'buddy' || activeTab === 'data' || activeTab === 'help') && (
-              <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-                <div className="text-4xl mb-3">🚧</div>
-                <p className="text-sm">此页面为演示，点击左侧「记忆」「个性化」「安全中心」查看功能介绍</p>
-              </div>
-            )}
+            {activeTab === 'ai' && <AISettings />}
+            {activeTab === 'model' && <ModelSettings />}
+            {activeTab === 'buddy' && <BuddySettings />}
+            {activeTab === 'data' && <DataSettings />}
+            {activeTab === 'help' && <HelpSettings />}
           </div>
         </div>
       </div>
@@ -296,6 +288,145 @@ function AccountSettings() {
         <button className="ml-auto px-4 py-1.5 text-sm border border-[#00C48C] text-[#00C48C] rounded-lg hover:bg-[#00C48C]/5 transition-colors">升级</button>
       </div>
       <div className="text-sm text-gray-500 text-center py-8">账户详细信息请在真实 WorkBuddy 客户端中查看</div>
+    </div>
+  );
+}
+
+function AISettings() {
+  const [autoThink, setAutoThink] = useState(true);
+  const [streamOutput, setStreamOutput] = useState(true);
+  const [contextLen, setContextLen] = useState(true);
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-gray-500 leading-relaxed">配置 AI 智能体的行为方式，影响任务执行的效率与质量。</p>
+      <SettingRow label="自动思考模式" desc="开启后 AI 在执行复杂任务前会先进行内部推理，提升输出质量。">
+        <WbToggle checked={autoThink} onChange={setAutoThink} />
+      </SettingRow>
+      <SettingRow label="流式输出" desc="开启后 AI 回复内容逐字显示，关闭则等待完整回复后一次性展示。">
+        <WbToggle checked={streamOutput} onChange={setStreamOutput} />
+      </SettingRow>
+      <SettingRow label="长上下文优化" desc="任务对话过长时自动压缩历史上下文，保持 AI 理解准确性。">
+        <WbToggle checked={contextLen} onChange={setContextLen} />
+      </SettingRow>
+      <SettingRow label="最大执行步数" desc="单次任务 AI 最多可执行的操作步数，超出后会暂停并询问是否继续。">
+        <select className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700">
+          <option>20 步</option>
+          <option>50 步</option>
+          <option>100 步</option>
+          <option>不限制</option>
+        </select>
+      </SettingRow>
+    </div>
+  );
+}
+
+function ModelSettings() {
+  const models = [
+    { name: 'DeepSeek V4 Pro', provider: 'DeepSeek', tag: '推荐', desc: '综合能力强，适合大多数场景', cost: '低' },
+    { name: '腾讯混元 Turbo', provider: '腾讯', tag: '', desc: '腾讯自研，中文理解出色', cost: '低' },
+    { name: 'Kimi k2', provider: 'Moonshot', tag: '', desc: '长文本处理能力强', cost: '中' },
+    { name: 'GLM-4 Plus', provider: '智谱AI', tag: '', desc: '代码与推理能力均衡', cost: '中' },
+    { name: 'MiniMax Text-01', provider: 'MiniMax', tag: '', desc: '多模态能力，支持图像理解', cost: '中' },
+  ];
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-gray-500 leading-relaxed">选择 AI 对话使用的默认大模型。不同模型能力各有侧重，积分消耗也不同。</p>
+      <div className="space-y-2">
+        {models.map((m, i) => (
+          <div key={m.name} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${i === 0 ? 'border-[#00C48C] bg-[#00C48C]/5' : 'border-gray-100 hover:border-gray-200'}`}>
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${i === 0 ? 'border-[#00C48C]' : 'border-gray-300'}`}>
+              {i === 0 && <div className="w-2 h-2 rounded-full bg-[#00C48C]" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-800">{m.name}</span>
+                {m.tag && <span className="text-xs bg-[#00C48C]/15 text-[#00C48C] px-1.5 rounded">{m.tag}</span>}
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">{m.provider} · {m.desc}</p>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${m.cost === '低' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>积分消耗{m.cost}</span>
+          </div>
+        ))}
+      </div>
+      <div className="pt-2 border-t border-gray-100">
+        <button className="flex items-center gap-2 text-sm text-[#00C48C] hover:underline">
+          <span>+</span> 添加自定义模型（接入自己的 API Key）
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BuddySettings() {
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [proactiveOn, setProactiveOn] = useState(true);
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-gray-500 leading-relaxed">配置 WorkBuddy 小扶助理的行为与交互方式。</p>
+      <SettingRow label="语音回复" desc="开启后 AI 回复内容将同时以语音播报，适合免手操作场景。">
+        <WbToggle checked={voiceOn} onChange={setVoiceOn} />
+      </SettingRow>
+      <SettingRow label="主动建议" desc="AI 在完成任务后会主动提供下一步操作建议，帮助你更高效地推进工作。">
+        <WbToggle checked={proactiveOn} onChange={setProactiveOn} />
+      </SettingRow>
+      <SettingRow label="小扶唤醒词" desc="设置语音唤醒词，说出唤醒词后可直接开始语音对话。">
+        <input className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-32 outline-none focus:border-[#00C48C]" defaultValue="小扶小扶" />
+      </SettingRow>
+    </div>
+  );
+}
+
+function DataSettings() {
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-gray-500 leading-relaxed">管理本地数据、缓存和同步设置。</p>
+      <div className="space-y-3">
+        {[
+          { label: '对话记录', size: '128 MB', desc: '所有历史对话的本地缓存' },
+          { label: '任务文件', size: '2.3 GB', desc: 'AI 生成的文件和中间结果' },
+          { label: '技能缓存', size: '45 MB', desc: '已安装技能的本地数据' },
+        ].map(item => (
+          <div key={item.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div>
+              <p className="text-sm font-medium text-gray-800">{item.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">{item.size}</span>
+              <button className="text-xs text-red-500 hover:underline">清除</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <SettingRow label="云端同步" desc="将对话记录和设置同步到云端，换设备后可恢复。">
+        <WbToggle checked={true} onChange={() => {}} />
+      </SettingRow>
+    </div>
+  );
+}
+
+function HelpSettings() {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-gray-500 leading-relaxed">遇到问题？查看文档或联系我们。</p>
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { icon: '📖', title: '新手入门指南', desc: '从安装到第一个任务的完整教程' },
+          { icon: '🎥', title: '视频教程', desc: '手把手演示各项功能的使用方法' },
+          { icon: '💬', title: '用户社区', desc: '与其他用户交流使用技巧和经验' },
+          { icon: '🐛', title: '问题反馈', desc: '遇到 Bug 或功能建议，告诉我们' },
+        ].map(item => (
+          <div key={item.title} className="border border-gray-100 rounded-xl p-4 cursor-pointer hover:border-[#00C48C]/40 transition-colors">
+            <div className="text-2xl mb-2">{item.icon}</div>
+            <p className="text-sm font-medium text-gray-800">{item.title}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-gray-50 rounded-xl p-4 text-center">
+        <p className="text-sm text-gray-600">当前版本：<strong>WorkBuddy v5.1.7</strong></p>
+        <button className="mt-2 text-xs text-[#00C48C] hover:underline">检查更新</button>
+      </div>
     </div>
   );
 }
