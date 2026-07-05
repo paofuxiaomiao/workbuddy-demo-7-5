@@ -2,16 +2,29 @@
 // 包含系统设置、记忆、个性化、安全中心等子页面
 
 import { useState } from 'react';
+import React from 'react';
 import { X, User, Settings, Brain, Cpu, Sliders, Palette, Database, Shield, HelpCircle } from 'lucide-react';
 import type { FeatureInfo } from '@/data/features';
 
 // 悬浮提示组件 - 问号图标 + 悬停弹出卡片
 function Tooltip({ text, tips }: { text: string; tips?: string[] }) {
   const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = React.useRef<HTMLButtonElement>(null);
+
+  const handleEnter = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+    }
+    setShow(true);
+  };
+
   return (
-    <div className="relative inline-flex items-center ml-1.5" style={{ zIndex: show ? 50 : 'auto' }}>
+    <div className="inline-flex items-center ml-1.5">
       <button
-        onMouseEnter={() => setShow(true)}
+        ref={btnRef}
+        onMouseEnter={handleEnter}
         onMouseLeave={() => setShow(false)}
         className="w-4 h-4 rounded-full flex items-center justify-center text-gray-300 hover:text-[#00C48C] hover:bg-[#00C48C]/10 transition-colors flex-shrink-0"
       >
@@ -19,10 +32,17 @@ function Tooltip({ text, tips }: { text: string; tips?: string[] }) {
       </button>
       {show && (
         <div
-          className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white rounded-xl shadow-2xl p-3 w-64 pointer-events-none"
-          style={{ animation: 'popIn 0.12s ease forwards', zIndex: 9999 }}
+          className="fixed bg-gray-900 text-white rounded-xl shadow-2xl p-3 w-72 pointer-events-none"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            transform: 'translateY(-50%)',
+            animation: 'popIn 0.12s ease forwards',
+            zIndex: 99999,
+          }}
+          onMouseLeave={() => setShow(false)}
         >
-          <div className="w-2 h-2 bg-gray-900 rotate-45 absolute -left-1 top-1/2 -translate-y-1/2" />
+          <div className="w-2 h-2 bg-gray-900 rotate-45 absolute -left-1 top-1/2 -translate-y-1/2 pointer-events-none" />
           <p className="text-xs text-gray-200 leading-relaxed">{text}</p>
           {tips && tips.length > 0 && (
             <div className="mt-2 space-y-1 border-t border-gray-700 pt-2">
