@@ -60,10 +60,74 @@ const settingsNav = [
 
 export default function SettingsModal({ onClose, onFeatureClick }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState('system');
+  const [tipVisible, setTipVisible] = useState(true);
+  const [dismissedTabs, setDismissedTabs] = useState<Set<string>>(new Set());
+
+  const TAB_TIPS: Record<string, { color: string; title: string; desc: string; tips: string[] }> = {
+    account: {
+      color: '#00C48C', title: '账户管理 — 积分与版本说明',
+      desc: '积分是 WorkBuddy 的使用货币，不同模型消耗不同数量的积分。每天可以在「Buddy 加油站」领取免费积分。',
+      tips: ['体验版：免费，有每日积分限额，适合入门体验', '个人专业版（约 58元/月）：积分更多，适合日常重度使用', '每天领取 100 通用积分，坚持打卡积分更多', '积分不够用时可在账户页面充值或升级版本'],
+    },
+    system: {
+      color: '#6B7280', title: '系统设置 — 新手必改的 3 项',
+      desc: '第一次打开 WorkBuddy，建议先完成这 3 项配置，否则后续使用可能遇到文件找不到、技能过期、任务中断等问题。',
+      tips: ['「默认工作空间路径」改为 D:/WorkBuddy/，避免占用 C 盘', '「技能自动更新」建议开启，技能有新版本自动升级', '「锁屏远程」如需远程下任务或自动化，必须开启'],
+    },
+    ai: {
+      color: '#6366F1', title: '智能体设置 — AI 行为方式配置',
+      desc: '这里控制 AI 执行任务时的行为模式。新手保持默认即可，熟悉后再根据需要调整。',
+      tips: ['「自动思考模式」开启后输出质量更高但速度稍慢，复杂任务推荐开启', '「流式输出」开启后 AI 回复逐字显示，像打字机一样', '「长上下文优化」建议开启，对话很长时 AI 不会忘记前面内容', '「最大执行步数」新手建议设 20-50 步，防止 AI 执行过多操作'],
+    },
+    memory: {
+      color: '#8B5CF6', title: '记忆 — 让 AI 越用越懂你',
+      desc: '记忆功能让 AI 从对话中提取并记住你的偏好和工作习惯。对话越多，AI 就越了解你，回答也越个性化。',
+      tips: ['建议开启「生成对话记忆」，AI 自动提取你的工作背景', '新手可先写 5 条基础记忆：先列计划再执行、不编造数据、不覆盖原文件、总结先给结论、标清保存路径', '记忆不要超过 10 条，太多会让 AI 分散注意力', '之前用过 ChatGPT 等工具，可以点「导入」迁移记忆'],
+    },
+    model: {
+      color: '#F59E0B', title: '模型 — 选择 AI 的大脑',
+      desc: '模型是 WorkBuddy 背后的大脑，不同模型在写作、表格、代码等任务上表现不同，积分消耗也不同。',
+      tips: ['新手无脑选 DeepSeek V4 Pro：综合能力强、积分消耗低', '长文档处理（超过 50 页）推荐 Kimi k2', '代码开发任务推荐 GLM Coding Plan', '有自己的 API Key 可点「添加模型」接入，仅支持 OpenAI 兼容协议'],
+    },
+    buddy: {
+      color: '#14B8A6', title: '小扶设置 — 配置你的 AI 助理',
+      desc: '小扶是 WorkBuddy 的内置助理角色，可以通过语音、主动建议等方式辅助你使用 WorkBuddy。',
+      tips: ['「主动建议」建议开启，任务完成后 AI 主动提供下一步操作建议', '「语音回复」适合开车、做家务等不方便看屏幕的场景', '「唤醒词」设置后可直接说唤醒词开始语音对话，默认「小扶小扶」'],
+    },
+    personal: {
+      color: '#EC4899', title: '个性化 — 定制你的专属 AI 助理',
+      desc: '自定义指令是最高优先级的行为规则，AI 在所有对话中都会遵循。这是让 AI 真正「了解你」的关键设置。',
+      tips: ['「自定义指令」把你的工作背景、偏好规则写在这里，AI 每次都会参考', '示例：「我是小学教师，处理文件时先列计划，不要编造数据，总结时先给结论」', '指令不要超过 500 字，只写最重要的规则', '「基本风格」：正式适合工作汇报，轻松适合日常对话'],
+    },
+    data: {
+      color: '#6366F1', title: '数据管理 — 缓存清理与云端同步',
+      desc: '如果 C 盘空间不足，可以在这里清理 AI 生成的中间文件缓存。建议开启云端同步，换电脑后可恢复设置。',
+      tips: ['「任务文件」缓存可以安全清理，是 AI 生成的中间结果', '「对话记录」清除后历史对话无法恢复，谨慎操作', '「云端同步」建议开启，换电脑也能恢复历史对话和设置', '定期清理「技能缓存」可以解决部分技能运行异常问题'],
+    },
+    security: {
+      color: '#EF4444', title: '安全中心 — 控制 AI 的操作边界',
+      desc: '安全中心统一管理 AI 的操作权限范围。新手建议保持默认配置，等熟悉 WorkBuddy 后再根据需要调整。',
+      tips: ['「沙箱安全」：AI 在隔离安全工作区内操作，出错不影响整台电脑', '「文件安全」：可设置哪些文件夹 AI 可以访问，保护重要文件', '「命令安全」：控制 AI 能执行哪些系统命令，新手保持默认', '「内置运行时」：开发类任务（Node.js/Python）需要开启'],
+    },
+    help: {
+      color: '#00C48C', title: '帮助与反馈 — 遇到问题先看这里',
+      desc: '90% 的新手问题都有现成答案。建议按顺序查找：新手指南 → 视频教程 → 用户社区 → 问题反馈。',
+      tips: ['文件找不到：检查路径是否用了完整的绝对路径（如 D:/WorkBuddy/文件名）', '任务中断：检查「锁屏远程」是否开启', '技能运行异常：尝试清理技能缓存或重新安装技能', '积分不够：每天在「Buddy 加油站」领取免费积分'],
+    },
+  };
 
   const handleNavClick = (id: string) => {
     setActiveTab(id);
+    if (!dismissedTabs.has(id)) setTipVisible(true);
   };
+
+  const handleDismissTip = () => {
+    setTipVisible(false);
+    setDismissedTabs(prev => { const s = new Set(Array.from(prev)); s.add(activeTab); return s; });
+  };
+
+  const currentTip = TAB_TIPS[activeTab];
+  const showTip = tipVisible && !!currentTip && !dismissedTabs.has(activeTab);
 
   return (
     <div
@@ -115,6 +179,38 @@ export default function SettingsModal({ onClose, onFeatureClick }: SettingsModal
 
           {/* 内容区 */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
+            {/* 自动弹出教学卡片 */}
+            {showTip && currentTip && (
+              <div
+                className="mb-4 rounded-xl overflow-hidden border"
+                style={{ borderColor: currentTip.color + '30', animation: 'tipSlideIn 0.25s cubic-bezier(0.23,1,0.32,1) forwards' }}
+              >
+                <div className="flex items-start justify-between px-4 py-3" style={{ background: currentTip.color + '12' }}>
+                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ background: currentTip.color }}>
+                      <span style={{ fontSize: 11, color: 'white', fontWeight: 'bold' }}>i</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold mb-1" style={{ color: currentTip.color }}>{currentTip.title}</p>
+                      <p className="text-xs text-gray-600 leading-relaxed mb-2">{currentTip.desc}</p>
+                      <div className="space-y-1">
+                        {currentTip.tips.map((tip, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: currentTip.color }} />
+                            <span className="text-xs text-gray-500 leading-relaxed">{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={handleDismissTip}
+                    className="w-5 h-5 rounded flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-white/60 transition-colors flex-shrink-0 ml-2 mt-0.5">
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
             {activeTab === 'system' && <SystemSettings onFeatureClick={onFeatureClick} />}
             {activeTab === 'memory' && <MemorySettings />}
             {activeTab === 'personal' && <PersonalSettings />}
@@ -132,6 +228,10 @@ export default function SettingsModal({ onClose, onFeatureClick }: SettingsModal
         @keyframes modalIn {
           from { opacity: 0; transform: scale(0.95) translateY(8px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes tipSlideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
