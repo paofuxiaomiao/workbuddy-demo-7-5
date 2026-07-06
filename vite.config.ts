@@ -15,6 +15,7 @@ const PROJECT_ROOT = import.meta.dirname;
 const LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
 const MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024; // 1MB per log file
 const TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6); // Trim to 60% to avoid constant re-trimming
+const GITHUB_PAGES_BASE = "/workbuddy-demo-7-5/";
 
 type LogSource = "browserConsole" | "networkRequests" | "sessionReplay";
 
@@ -206,6 +207,7 @@ function vitePluginStorageProxy(): Plugin {
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
 
 export default defineConfig({
+  base: process.env.GITHUB_PAGES === "true" ? GITHUB_PAGES_BASE : "/",
   plugins,
   resolve: {
     alias: {
